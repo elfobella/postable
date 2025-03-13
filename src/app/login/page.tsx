@@ -1,10 +1,11 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 
-export default function Login() {
+// SearchParams için bir bileşen oluşturuyoruz
+function LoginContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const registered = searchParams.get('registered');
@@ -130,5 +131,14 @@ export default function Login() {
         </p>
       </div>
     </div>
+  );
+}
+
+// Ana bileşen Suspense ile sarılmış LoginContent'i döndürür
+export default function Login() {
+  return (
+    <Suspense fallback={<div className="flex min-h-screen items-center justify-center">Yükleniyor...</div>}>
+      <LoginContent />
+    </Suspense>
   );
 } 
