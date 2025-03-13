@@ -1,16 +1,40 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/db';
-import { posts, users } from '@/db/schema';
-import { authMiddleware } from '@/lib/auth';
-import { v4 as uuidv4 } from 'uuid';
-import { desc, eq } from 'drizzle-orm';
+
+// Demo amaçlı örnek postlar
+const demoPostlar = [
+  {
+    id: 'post-1',
+    title: 'Doğa Manzarası',
+    description: 'Harika bir doğa manzarası fotoğrafı',
+    imageUrl: 'https://images.unsplash.com/photo-1501854140801-50d01698950b?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1950&q=80',
+    userId: 'user-1',
+    username: 'DoğaSever',
+    createdAt: new Date(2023, 5, 15).toISOString()
+  },
+  {
+    id: 'post-2',
+    title: 'Şehir Manzarası',
+    description: 'Modern bir şehir manzarası',
+    imageUrl: 'https://images.unsplash.com/photo-1477959858617-67f85cf4f1df?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1944&q=80',
+    userId: 'user-2',
+    username: 'ŞehirKeşfedeni',
+    createdAt: new Date(2023, 6, 20).toISOString()
+  },
+  {
+    id: 'post-3',
+    title: 'Deniz Manzarası',
+    description: 'Muhteşem bir deniz manzarası',
+    imageUrl: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2073&q=80',
+    userId: 'user-3',
+    username: 'DenizAşığı',
+    createdAt: new Date(2023, 7, 10).toISOString()
+  }
+];
 
 // Tüm postları getir
 export async function GET() {
   try {
-    const allPosts = await db.select().from(posts).orderBy(desc(posts.createdAt));
-    
-    return NextResponse.json(allPosts);
+    return NextResponse.json(demoPostlar);
   } catch (error) {
     console.error('Postları getirme hatası:', error);
     return NextResponse.json(
@@ -23,14 +47,6 @@ export async function GET() {
 // Yeni post oluştur
 export async function POST(request: NextRequest) {
   try {
-    // Kimlik doğrulama
-    const auth = authMiddleware(request);
-    if (auth instanceof NextResponse) {
-      return auth;
-    }
-
-    const { userId } = auth;
-    
     // Form verilerini al
     const formData = await request.formData();
     const title = formData.get('title') as string;
@@ -45,35 +61,19 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Kullanıcıyı bul
-    const user = await db.select().from(users).where(eq(users.id, userId));
-    
-    if (user.length === 0) {
-      return NextResponse.json(
-        { error: 'Kullanıcı bulunamadı' },
-        { status: 404 }
-      );
-    }
-
-    // Resmi base64'e dönüştür
-    const bytes = await imageFile.arrayBuffer();
-    const buffer = Buffer.from(bytes);
-    const base64Image = `data:${imageFile.type};base64,${buffer.toString('base64')}`;
-
-    // Postu veritabanına ekle
-    const postId = uuidv4();
-    await db.insert(posts).values({
-      id: postId,
+    // Demo amaçlı yeni post oluştur
+    const newPost = {
+      id: `post-${Date.now()}`,
       title,
       description,
-      imageUrl: base64Image,
-      userId,
-      username: user[0].username,
-      createdAt: new Date()
-    });
+      imageUrl: 'https://images.unsplash.com/photo-1493246507139-91e8fad9978e?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80',
+      userId: 'demo-user-id',
+      username: 'Demo Kullanıcı',
+      createdAt: new Date().toISOString()
+    };
 
     return NextResponse.json(
-      { message: 'Post başarıyla oluşturuldu', postId },
+      { message: 'Post başarıyla oluşturuldu', postId: newPost.id },
       { status: 201 }
     );
   } catch (error) {
@@ -83,4 +83,4 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
-} 
+}
