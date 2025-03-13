@@ -12,27 +12,22 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Demo amaçlı basit doğrulama
+    // Demo amaçlı basit doğrulama - herhangi bir email/şifre kombinasyonunu kabul et
     // Gerçek uygulamada veritabanından kullanıcı kontrolü yapılmalıdır
-    if (email === 'demo@example.com' && password === 'password') {
-      // JWT token oluştur (demo amaçlı basit bir token)
-      const token = 'demo-token-123456';
+    const token = 'demo-token-123456';
+    
+    // Kullanıcı adını email'den türet
+    const username = email.split('@')[0];
 
-      return NextResponse.json({
-        message: 'Giriş başarılı',
-        token,
-        user: {
-          id: 'demo-user-id',
-          username: 'Demo Kullanıcı',
-          email: email
-        }
-      });
-    }
-
-    return NextResponse.json(
-      { error: 'Geçersiz email veya şifre' },
-      { status: 401 }
-    );
+    return NextResponse.json({
+      message: 'Giriş başarılı',
+      token,
+      user: {
+        id: 'demo-user-id',
+        username: username || 'Demo Kullanıcı',
+        email: email
+      }
+    });
   } catch (error) {
     console.error('Giriş hatası:', error);
     return NextResponse.json(
