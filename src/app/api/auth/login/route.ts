@@ -1,8 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/db';
-import { users } from '@/db/schema';
-import { comparePasswords, generateToken } from '@/lib/auth';
-import { eq } from 'drizzle-orm';
 
 export async function POST(request: NextRequest) {
   try {
@@ -16,38 +12,27 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Kullanıcıyı bul
-    const user = await db.select().from(users).where(eq(users.email, email));
+    // Demo amaçlı basit doğrulama
+    // Gerçek uygulamada veritabanından kullanıcı kontrolü yapılmalıdır
+    if (email === 'demo@example.com' && password === 'password') {
+      // JWT token oluştur (demo amaçlı basit bir token)
+      const token = 'demo-token-123456';
 
-    if (user.length === 0) {
-      return NextResponse.json(
-        { error: 'Geçersiz email veya şifre' },
-        { status: 401 }
-      );
+      return NextResponse.json({
+        message: 'Giriş başarılı',
+        token,
+        user: {
+          id: 'demo-user-id',
+          username: 'Demo Kullanıcı',
+          email: email
+        }
+      });
     }
 
-    // Şifreleri karşılaştır
-    const isPasswordValid = await comparePasswords(password, user[0].password);
-
-    if (!isPasswordValid) {
-      return NextResponse.json(
-        { error: 'Geçersiz email veya şifre' },
-        { status: 401 }
-      );
-    }
-
-    // JWT token oluştur
-    const token = generateToken(user[0].id);
-
-    return NextResponse.json({
-      message: 'Giriş başarılı',
-      token,
-      user: {
-        id: user[0].id,
-        username: user[0].username,
-        email: user[0].email
-      }
-    });
+    return NextResponse.json(
+      { error: 'Geçersiz email veya şifre' },
+      { status: 401 }
+    );
   } catch (error) {
     console.error('Giriş hatası:', error);
     return NextResponse.json(
@@ -55,4 +40,4 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
-} 
+}
