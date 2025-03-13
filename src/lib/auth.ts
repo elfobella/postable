@@ -1,47 +1,68 @@
-import { NextRequest, NextResponse } from 'next/server';
-import bcrypt from 'bcrypt';
-import jwt from 'jsonwebtoken';
+import { supabase } from './supabase';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
+// Kullanıcı kaydı
+export async function signUp(email: string, password: string, username: string) {
+  const { data, error } = await supabase.auth.signUp({
+    email,
+    password,
+    options: {
+      data: {
+        username,
+      },
+    },
+  });
 
-// Şifre hashleme
-export async function hashPassword(password: string): Promise<string> {
-  const saltRounds = 10;
-  return bcrypt.hash(password, saltRounds);
+  if (error) throw error;
+  return data;
 }
 
-// Şifre karşılaştırma
-export async function comparePasswords(password: string, hashedPassword: string): Promise<boolean> {
-  return bcrypt.compare(password, hashedPassword);
+// Kullanıcı girişi
+export async function signIn(email: string, password: string) {
+  const { data, error } = await supabase.auth.signInWithPassword({
+    email,
+    password,
+  });
+
+  if (error) throw error;
+  return data;
 }
 
-// JWT token oluşturma
-export function generateToken(userId: string): string {
-  return jwt.sign({ userId }, JWT_SECRET, { expiresIn: '7d' });
+// Kullanıcı çıkışı
+export async function signOut() {
+  const { error } = await supabase.auth.signOut();
+  if (error) throw error;
 }
 
-// JWT token doğrulama
-export function verifyToken(token: string): { userId: string } | null {
-  try {
-    return jwt.verify(token, JWT_SECRET) as { userId: string };
-  } catch (error) {
-    return null;
-  }
-}
-
-// Kimlik doğrulama middleware'i
-export function authMiddleware(request: NextRequest) {
-  const token = request.headers.get('Authorization')?.split(' ')[1];
+// Mevcut kullanıcıyı al
+export async function getCurrentUser() {
+  const { data: { session }, error } = await supabase.auth.getSession();
   
-  if (!token) {
-    return NextResponse.json({ error: 'Yetkilendirme başarısız' }, { status: 401 });
-  }
-
-  const decoded = verifyToken(token);
+  if (error) throw error;
+  if (!session) return null;
   
-  if (!decoded) {
-    return NextResponse.json({ error: 'Geçersiz token' }, { status: 401 });
-  }
+  const { data: { user } } = await supabase.auth.getUser();
+  return user;
+}
 
-  return decoded;
-} 
+// Kullanıcı profilini al
+export async function getUserProfile(userId: string) {
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('*')
+    .eq('id', userId)
+    .single();
+  
+  if (error) throw error;
+  return data;
+}
+
+// Kullanıcı profilini güncelle
+export async function updateUserProfile(userId: string, updates: any) {
+  const { data, error } = await supabase
+    .from('profiles')
+    .update(updates)
+    .eq('id', userId);
+  
+  if (error) throw error;
+  return data;
+}
