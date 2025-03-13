@@ -20,6 +20,37 @@ interface Post {
   createdAt: string;
 }
 
+// Demo amaçlı örnek postlar
+const demoPostlar = [
+  {
+    id: 'post-1',
+    title: 'Doğa Manzarası',
+    description: 'Harika bir doğa manzarası fotoğrafı',
+    imageUrl: 'https://images.unsplash.com/photo-1501854140801-50d01698950b?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1950&q=80',
+    userId: 'user-1',
+    username: 'DoğaSever',
+    createdAt: new Date(2023, 5, 15).toISOString()
+  },
+  {
+    id: 'post-2',
+    title: 'Şehir Manzarası',
+    description: 'Modern bir şehir manzarası',
+    imageUrl: 'https://images.unsplash.com/photo-1477959858617-67f85cf4f1df?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1944&q=80',
+    userId: 'user-2',
+    username: 'ŞehirKeşfedeni',
+    createdAt: new Date(2023, 6, 20).toISOString()
+  },
+  {
+    id: 'post-3',
+    title: 'Deniz Manzarası',
+    description: 'Muhteşem bir deniz manzarası',
+    imageUrl: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2073&q=80',
+    userId: 'user-3',
+    username: 'DenizAşığı',
+    createdAt: new Date(2023, 7, 10).toISOString()
+  }
+];
+
 export default function Dashboard() {
   const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
@@ -51,16 +82,48 @@ export default function Dashboard() {
   const fetchPosts = async () => {
     try {
       setLoading(true);
+      
+      // localStorage'dan kullanıcı postlarını al
+      const storedPosts = localStorage.getItem('posts');
+      let userPosts: Post[] = [];
+      
+      if (storedPosts) {
+        userPosts = JSON.parse(storedPosts);
+      }
+      
+      // Kullanıcı postları varsa, demo postlarla birleştir
+      // Yoksa sadece demo postları göster
+      if (userPosts && userPosts.length > 0) {
+        setPosts([...userPosts, ...demoPostlar]);
+      } else {
+        setPosts(demoPostlar);
+      }
+      
+      setLoading(false);
+      return;
+      
+      // API'den postları getir (şu an kullanılmıyor)
       const response = await fetch('/api/posts');
       
       if (!response.ok) {
-        throw new Error('Postlar getirilirken bir hata oluştu');
+        const errorText = await response.text();
+        let errorMessage = 'Postlar getirilirken bir hata oluştu';
+        
+        try {
+          const errorData = JSON.parse(errorText);
+          errorMessage = errorData.error || errorMessage;
+        } catch (parseError) {
+          console.error('API yanıtı JSON formatında değil:', errorText);
+        }
+        
+        throw new Error(errorMessage);
       }
 
       const data = await response.json();
       setPosts(data);
     } catch (err: any) {
-      setError(err.message);
+      console.error('Postları getirme hatası:', err);
+      setError(err.message || 'Postlar getirilirken bir hata oluştu');
     } finally {
       setLoading(false);
     }
@@ -167,4 +230,4 @@ export default function Dashboard() {
       </main>
     </div>
   );
-} 
+}
